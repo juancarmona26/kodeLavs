@@ -85,7 +85,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </script>
 
   <script src="https://www.gstatic.com/firebasejs/5.3.0/firebase.js"></script>
-  <script>
+  <script defer>
     // Initialize Firebase
     var config = {
       apiKey: "AIzaSyDDWcgo5nQMURXp0yoZBQbF__aTpDhBbsc",
@@ -96,10 +96,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       messagingSenderId: "342969608742"
     };
     firebase.initializeApp(config);
+
+    // Get a reference to the database service
+    
+    const database = firebase.database();
+    // database.ref('name/').set('Good bye my life ! :(');
+      
+      const name = database.ref('name/');
+      
+      name.on('value', (snapshot) => {
+      document.querySelector('#title').innerText = snapshot.val();
+      console.log(snapshot.val());
+    });
+   
     </script>
 
     <!-- Load webcomponents-loader.js to check and load any polyfills your browser needs -->
     <script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
+    
 
     <!-- Load your application shell -->
     <link rel="import" href="src/my-app.html">
@@ -120,6 +134,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <noscript>
       Please enable JavaScript to view this website.
     </noscript>
+    <h2 id="title"></h2>
     <!-- Built with love using Polymer Starter Kit -->
   </body>
+  <script>
+     
+  </script>
 </html>
