@@ -10,8 +10,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="shared-styles.html">
+<link rel="import" href="my-lab-card.html">
 
-<dom-module id="my-view1">
+<dom-module id="lavs-view">
   <template>
     <style include="shared-styles">
       :host {
@@ -26,14 +27,39 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <h1>View One</h1>
       <p>Ut labores minimum atomorum pro. Laudem tibique ut has.</p>
       <p>Lorem ipsum dolor sit amet, per in nusquam nominavi periculis, sit elit oportere ea.Lorem ipsum dolor sit amet, per in nusquam nominavi periculis, sit elit oportere ea.Cu mei vide viris gloriatur, at populo eripuit sit.</p>
+
+      <dom-repeat items="[[lavs]]">
+        <template>
+          <my-lab-card></my-lab-card>
+        </template>
+      </dom-repeat>
+
     </div>
   </template>
 
   <script>
-    class MyView1 extends Polymer.Element {
-      static get is() { return 'my-view1'; }
-    }
+    class LavsView extends Polymer.Element {
+      static get is() { return 'lavs-view'; }
 
-    window.customElements.define(MyView1.is, MyView1);
+      static get properties() {
+          return {
+              lavs: {
+                  type: Object,
+                  value: []
+              }
+          };
+      }
+
+      connectedCallback() {
+          super.connectedCallback();
+          const lavsRef = firebase.database().ref('lab/');
+          lavsRef.on('value', (snapshot) =>{
+              this.lavs.push(snapshot.val());
+              this.lavs = this.lavs.concat([]);
+          });
+      }
+
+    }
+    window.customElements.define(LavsView.is, LavsView);
   </script>
 </dom-module>
