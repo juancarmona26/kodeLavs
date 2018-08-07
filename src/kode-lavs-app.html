@@ -80,7 +80,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         tail="{{subroute}}">
     </app-route>
 
-    <app-drawer-layout fullbleed narrow="{{narrow}}">
+    <app-drawer-layout fullbleed narrow="{{narrow}}" on-verifySession="">
       <!-- Drawer content -->
       <app-drawer id="drawer" slot="drawer" swipe-open="[[narrow]]">
         <app-toolbar>Menu</app-toolbar>
@@ -122,6 +122,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     class KodeLavsApp extends Polymer.Element {
       static get is() { return 'kode-lavs-app'; }
+
+      starting(event){
+          this.page = event.detail;
+      }
 
       static get properties() {
         return {

@@ -10,7 +10,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="shared-styles.html">
-<link rel="import" href="my-lab-card.html">
+<link rel="import" href="my-lavcard.html">
 
 <dom-module id="lavs-view">
   <template>
@@ -30,7 +30,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       <dom-repeat items="[[lavs]]">
         <template>
-          <my-lab-card></my-lab-card>
+          <my-lavcard lab="[[item]]"></my-lavcard>
         </template>
       </dom-repeat>
 
