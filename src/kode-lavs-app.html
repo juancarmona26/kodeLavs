@@ -25,6 +25,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="lazy-import" href="lavs-view.html">
 <link rel="lazy-import" href="my-view2.html">
 <link rel="lazy-import" href="my-view3.html">
+<link rel="lazy-import" href="login-view.html">
+<link rel="lazy-import" href="register-view.html">
 <link rel="lazy-import" href="my-view404.html">
 
 <dom-module id="kode-lavs-app">
@@ -88,6 +90,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <a name="view1" href="[[rootPath]]lavs">View One</a>
           <a name="view2" href="[[rootPath]]view2">View Two</a>
           <a name="view3" href="[[rootPath]]view3">View Three</a>
+          <a name="login" href="[[rootPath]]login">Login</a>
         </iron-selector>
       </app-drawer>
 
@@ -109,6 +112,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <lavs-view name="lavs"></lavs-view>
           <my-view2 name="view2"></my-view2>
           <my-view3 name="view3"></my-view3>
+          <login-view name="login"></login-view>
           <my-view404 name="view404"></my-view404>
         </iron-pages>
       </app-header-layout>
@@ -148,7 +152,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         ];
       }
 
-      _routePageChanged(page) {
+        connectedCallback() {
+            super.connectedCallback();
+            this.__oAuthMiddelware();
+        }
+
+        __oAuthMiddelware() {
+            firebase.auth().onAuthStateChanged(user => {
+                console.log('user:');
+                console.log(user);
+            });
+        }
+
+
+        _routePageChanged(page) {
         // If no page was found in the route data, page will be an empty string.
         // Default to 'view1' in that case.
         this.page = page || 'lavs';
@@ -166,7 +183,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         switch (page){
             case 'lavs':
                 file = 'lavs-view';
-            break;
+                break;
+            case 'login':
+                file = 'login-view';
+                break;
         }
         const resolvedPageUrl = this.resolveUrl(file +  '.html');
         Polymer.importHref(
