@@ -17,13 +17,15 @@
     <template>
         <custom-style>
             <style is="custom-style">
+
                 body {
                     display: flex;
                     align-items: center;
                     justify-content: center;
                 }
                 paper-card {
-                    max-width: 500px;
+                    max-width: 350px;
+                    margin-top: 5%;
                 }
                 .cafe-header { @apply --paper-font-headline; }
                 .cafe-light { color: var(--paper-grey-600); }
@@ -41,13 +43,16 @@
                 iron-icon.star:last-of-type { color: var(--paper-grey-500); }
 
                 paper-button.indigo {
-                    background-color: var(--paper-indigo-400);
+                    color: var(--paper-indigo-400);
+                    border: #4a148c 1px solid;
 
                 }
+
+
             </style>
             <custom-style>
 
-                <paper-card heading="[[lab.title]]" image="../images/purple.png" alt="Sailboat Harbor" class="white">
+                <paper-card id="pcard" heading="[[lab.title]]" image="../images/purple.png" alt="Sailboat Harbor" class="white">
                     <div class="card-content">[[lab.category]]</div>
                     <div class="card-actions">
 
@@ -60,6 +65,7 @@
                         <paper-button id="validateButton" class="indigo" on-click="_validateSession">Inicia curso</paper-button>
                     </div>
                 </paper-card>
+
             </custom-style></custom-style>
 
     </template>
@@ -97,17 +103,37 @@
                     category: 'Example of Category',
                     description: 'Brief description of this lab, Lorem ipsum dolor sit amet, per in nusquam nomin Lorem ipsum dolor sit amet, per in nusquam nomin'
                 };
+                this.response = {
+                    response:{
+                        useruid : '',
+                        labuid : this.lab.uid,
+                        verificator : false
+                    }
+                };
             }
 
             _validateSession(){
-                this._createMasterEvent(event,this.page);
+                firebase.auth().onAuthStateChanged( user => {
+                    this.response.useruid = user.uid;
+                    this.response.labuid = this.lab.uid;
+
+                    if(user){
+                        this._createMasterEvent(event, this.response);
+                    }
+                    else{
+                        this.response.verificator = true;
+                        this._createMasterEvent(event,this.response);
+                    }
+
+                });
+
             }
 
-            _createMasterEvent(event,route){
-                this.dispatchEvent(new CustomEvent('verifySession', {
+            _createMasterEvent(event,data){
+                this.dispatchEvent(new CustomEvent('verify', {
                     bubbles: true,
                     composed: true,
-                    detail: route
+                    detail: data
                 }));
             }
 
@@ -117,20 +143,6 @@
                 descriptionDiv.toggle();
                 button.setAttribute('aria-expanded', descriptionDiv.opened);
             }
-
-            connectedCallback() {
-                super.connectedCallback();
-                firebase.auth().onAuthStateChanged( user => {
-                    if(user){
-                        //lanzas evento de cambiar pagina
-                    }else{
-                        //solicitas inicio de seseion y agregas la info del cambio de pagina
-                    }
-                    this.set('page', user ? this.lab.uid : 'login');
-
-                });
-            }
-
 
         }
         window.customElements.define(MyLavcard.is, MyLavcard);
