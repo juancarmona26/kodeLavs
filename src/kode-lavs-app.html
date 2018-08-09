@@ -81,8 +81,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         data="{{routeData}}"
         tail="{{subroute}}">
     </app-route>
+    <paper-toast id="toast" text="" ></paper-toast>
+    <app-drawer-layout fullbleed narrow="{{narrow}}" on-verify="validate" on-notification="show">
 
-    <app-drawer-layout fullbleed narrow="{{narrow}}" on-verifySession="">
       <!-- Drawer content -->
       <app-drawer id="drawer" slot="drawer" swipe-open="[[narrow]]">
         <app-toolbar>Menu</app-toolbar>
@@ -127,9 +128,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     class KodeLavsApp extends Polymer.Element {
       static get is() { return 'kode-lavs-app'; }
 
-      starting(event){
-          this.page = event.detail;
-      }
+      validate(event){
+          //this.__oAuthMiddelware();
+            console.log("labuid:" + event.detail.response.labuid);
+            console.log("useruid:" + event.detail.response.useruid);
+            if(event.detail.response.verificator){
+                console.log('necesitas loguearte');
+                this.set('page','login');
+            }
+            else{
+                console.log("detail:" + event.detail);
+                console.log('ok carga contenido:' + event.detail.response.labuid);
+                this.set('page','login');
+            }
+        }
 
       static get properties() {
         return {
@@ -138,6 +150,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             reflectToAttribute: true,
             observer: '_pageChanged',
           },
+            message: String,
           routeData: Object,
           subroute: Object,
           // This shouldn't be neccessary, but the Analyzer isn't picking up
@@ -152,6 +165,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         ];
       }
 
+        show(event){
+            const toaster = this.shadowRoot.querySelector('#toast');
+            toaster.text = event.detail.error;
+            toaster.open();
+        }
+
         connectedCallback() {
             super.connectedCallback();
             this.__oAuthMiddelware();
@@ -159,8 +178,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         __oAuthMiddelware() {
             firebase.auth().onAuthStateChanged(user => {
-                console.log('user:');
-                console.log(user);
+                console.log('user:' + user);
             });
         }
 
