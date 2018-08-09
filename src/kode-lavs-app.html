@@ -20,6 +20,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-pages/iron-pages.html">
 <link rel="import" href="../bower_components/iron-selector/iron-selector.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="redux/redux-mixin.html">
+
 <link rel="import" href="my-icons.html">
 
 <link rel="lazy-import" href="lavs-view.html">
@@ -28,6 +30,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="lazy-import" href="login-view.html">
 <link rel="lazy-import" href="register-view.html">
 <link rel="lazy-import" href="my-view404.html">
+<link rel="lazy-import" href="content-lab.html">
+<link rel="lazy-import" href="users-table.html">
+
 
 <dom-module id="kode-lavs-app">
   <template>
@@ -68,30 +73,35 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         color: black;
         font-weight: bold;
       }
+
+      paper-card.white{
+        --paper-card-header-color: white;
+      }
+
+
     </style>
 
     <app-location
-        route="{{route}}"
-        url-space-regex="^[[rootPath]]">
+            route="{{route}}"
+            url-space-regex="^[[rootPath]]">
     </app-location>
 
     <app-route
-        route="{{route}}"
-        pattern="[[rootPath]]:page"
-        data="{{routeData}}"
-        tail="{{subroute}}">
+            route="{{route}}"
+            pattern="[[rootPath]]:page"
+            data="{{routeData}}"
+            tail="{{subroute}}">
     </app-route>
     <paper-toast id="toast" text="" ></paper-toast>
-    <app-drawer-layout fullbleed narrow="{{narrow}}" on-verify="validate" on-notification="show">
+    <app-drawer-layout id ="centraal-layout" fullbleed narrow="{{narrow}}" on-verify="validate" on-notification="show">
 
       <!-- Drawer content -->
       <app-drawer id="drawer" slot="drawer" swipe-open="[[narrow]]">
         <app-toolbar>Menu</app-toolbar>
-        <iron-selector selected="[[page]]" attr-for-selected="name" class="drawer-list" role="navigation">
-          <a name="view1" href="[[rootPath]]lavs">View One</a>
-          <a name="view2" href="[[rootPath]]view2">View Two</a>
-          <a name="view3" href="[[rootPath]]view3">View Three</a>
-          <a name="login" href="[[rootPath]]login">Login</a>
+        <iron-selector selected="[[page]]"  attr-for-selected="name" class="drawer-list" role="navigation">
+          <template is="dom-repeat" items="[[options]]">
+            <a name="[[item.name]]" href="[[item.path]]" on-click="handleOptionClick" class$="[[item.class]]">[[item.option]]</a>
+          </template>
         </iron-selector>
       </app-drawer>
 
@@ -100,125 +110,296 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         <app-header slot="header" condenses reveals effects="waterfall">
           <app-toolbar>
-            <paper-icon-button icon="my-icons:menu" drawer-toggle></paper-icon-button>
-            <div main-title>My App</div>
+            <!--<paper-icon-button icon="my-icons:menu" drawer-toggle></paper-icon-button>-->
+            <div main-title>[[title]]</div>
+            <div class="menu-bar">
+
+              <div>
+                <a name="login" href="[[rootPath]]login" hidden="[[isLoged]]">Login</a>
+              </div>
+              <div>
+                <a name="logout" href="" on-click="signOut" hidden="[[!isLoged]]">Sign Out</a>
+              </div>
+              <div>
+                <a name="users-table" hidden="[[!showUsersTable]]" href="users-table">users</a>
+              </div>
+            </div>
           </app-toolbar>
         </app-header>
 
         <iron-pages
-            selected="[[page]]"
-            attr-for-selected="name"
-            fallback-selection="view404"
-            role="main">
-          <lavs-view name="lavs"></lavs-view>
+                selected="[[page]]"
+                attr-for-selected="name"
+                fallback-selection="view404"
+                role="main"
+                on-to-login="__changeToLogin">
+          <lavs-view  name="lavs"></lavs-view>
           <my-view2 name="view2"></my-view2>
           <my-view3 name="view3"></my-view3>
           <login-view name="login"></login-view>
           <my-view404 name="view404"></my-view404>
+          <users-table name="users-table"></users-table>
+          <content-lab id="lab" name="content-lab"></content-lab>
         </iron-pages>
       </app-header-layout>
     </app-drawer-layout>
   </template>
 
   <script>
-    // Gesture events like tap and track generated from touch will not be
-    // preventable, allowing for better scrolling performance.
-    Polymer.setPassiveTouchGestures(true);
+      // Gesture events like tap and track generated from touch will not be
+      // preventable, allowing for better scrolling performance.
+      Polymer.setPassiveTouchGestures(true);
 
-    class KodeLavsApp extends Polymer.Element {
-      static get is() { return 'kode-lavs-app'; }
+      class KodeLavsApp extends ReduxMixin(Polymer.Element) {
+          static get is() { return 'kode-lavs-app'; }
 
-      validate(event){
-          //this.__oAuthMiddelware();
-            console.log("labuid:" + event.detail.response.labuid);
-            console.log("useruid:" + event.detail.response.useruid);
-            if(event.detail.response.verificator){
-                console.log('necesitas loguearte');
-                this.set('page','login');
-            }
-            else{
-                console.log("detail:" + event.detail);
-                console.log('ok carga contenido:' + event.detail.response.labuid);
-                this.set('page','login');
-            }
-        }
+          validate(event){
+              if(event.detail.response.verificator){
+                  this.__changeRoute('login');
+              }
+              else{
+                  this.set('labUid', event.detail.labuid);
+                  this.__oAuthMiddelware();
+              }
+          }
 
-      static get properties() {
-        return {
-          page: {
-            type: String,
-            reflectToAttribute: true,
-            observer: '_pageChanged',
-          },
-            message: String,
-          routeData: Object,
-          subroute: Object,
-          // This shouldn't be neccessary, but the Analyzer isn't picking up
-          // Polymer.Element#rootPath
-          rootPath: String,
-        };
+          static get properties() {
+              return {
+                  page: {
+                      type: String,
+                      reflectToAttribute: true,
+                      observer: '_pageChanged',
+                  },
+                  message: String,
+                  routeData: Object,
+                  subroute: Object,
+                  // This shouldn't be neccessary, but the Analyzer isn't picking up
+                  // Polymer.Element#rootPath
+                  rootPath: String,
+                  userLabInfo: {
+                      type: Object,
+                      path: 'userLabInfo'
+                  },
+                  options: {
+                      type: Array,
+                      statePath: 'options',
+                  },
+                  title: {
+                      type: String,
+                      statePath: 'title',
+                  },
+                  isAdmin: {
+                      type: Boolean,
+                      value: false,
+                  },
+                  showUsersTable: {
+                      type: Boolean,
+                      value: false,
+                  },
+                  isLoged: {
+                      type: Boolean,
+                      value: false,
+                  },
+                  labUid:{
+                      type: String
+                  }
+              };
+          }
+
+          static get observers() {
+              return [
+                  '_routePageChanged(routeData.page)',
+              ];
+          }
+
+          static get actions() {
+              return {
+                  changeStep: (step) => {
+                      return {
+                          type: 'CHANGE_STEP',
+                          step: step,
+                      };
+                  },
+                  changeUserLabInfo: (userLabInfo) => {
+                      return {
+                          type: 'CHANGE_USER_LAB_INFO',
+                          userLabInfo: userLabInfo,
+                      };
+                  },
+                  changeTitle: (title) => {
+                      return {
+                          type: 'CHANGE_TITLE',
+                          title: title,
+                      };
+                  },
+              };
+          }
+
+          show(event){
+              const toaster = this.shadowRoot.querySelector('#toast');
+              toaster.text = event.detail.error;
+              toaster.open();
+          }
+
+          connectedCallback() {
+              super.connectedCallback();
+              this.__oAuthMiddelware();
+          }
+
+          __oAuthMiddelware() {
+              firebase.auth().onAuthStateChanged( user => {
+                  if(user !== null) {
+                      this.set('isLoged', true);
+                      if(this.page !== 'content-lab') {
+                          this.__changeRoute('lavs');
+                          this.__getRol(user.uid);
+                      }
+
+                      const fUserLabInfo =
+                          firebase.database().ref('userLabs/' + user.uid + '/' + this.labUid);
+                      fUserLabInfo.on('value', (labInfo) => {
+                          const value = labInfo.val();
+                          if(value !== null) {
+                              this.__shareUserLabInfo(user.uid, this.labUid, value.step);
+                          } else {
+                              if(this.labUid) {
+                                  this.__setUserLab(user.uid, this.labUid);
+                              }
+
+                          }
+                      });
+
+                  }
+              });
+          }
+
+          __showUsersTable(){
+              if(this.isAdmin && this.page !== 'content-lab') {
+                  this.set('showUsersTable', true);
+              } else {
+                  this.set('showUsersTable', false);
+              }
+          }
+
+          __setUserLab(userUid, uidLab){
+              const ref = firebase.database().ref('userLabs/' + userUid + '/' + uidLab);
+              ref.set({
+                      step: "1"
+                  }
+              );
+              this.__shareUserLabInfo(userUid, uidLab, "1");
+          }
+
+          __shareUserLabInfo(userUid, uidLab, step) {
+              const userLabInfo = {};
+              userLabInfo.uidUser = userUid;
+              userLabInfo.labUid = uidLab;
+              userLabInfo.step = step;
+              this.dispatch('changeUserLabInfo', userLabInfo);
+              this.__changeRoute('content-lab');
+              this.__getRol(userLabInfo.uidUser);
+          }
+
+          __getRol(uid){
+              const userRol =
+                  firebase.database().ref('Users/' + uid + '/rol');
+              userRol.on('value', (rol) => {
+                  if (rol.val() === 'admin') {
+                      this.set('isAdmin', true);
+                      this.__showUsersTable();
+                  } else {
+                      this.set('isAdmin', false);
+                  }
+              });
+          }
+
+          _routePageChanged(page) {
+              // If no page was found in the route data, page will be an empty string.
+              // Default to 'view1' in that case.
+              this.page = page || 'lavs';
+              // Close a non-persistent drawer when the page & route are changed.
+              if (!this.$.drawer.persistent) {
+                  this.$.drawer.close();
+              }
+          }
+
+          _pageChanged(page) {
+              // Load page import on demand. Show 404 page if fails
+              if(this.page !== 'content-lab'){
+                  this.dispatch('changeTitle', 'Labs');
+                  this.__showUsersTable();
+                  this.$['centraal-layout'].setAttribute('force-narrow', true);
+              } else {
+                  this.$['centraal-layout'].removeAttribute('force-narrow');
+              }
+              let file = 'my-view404';
+              switch (page){
+                  case 'lavs':
+                      file = 'lavs-view';
+                      break;
+                  case 'login':
+                      file = 'login-view';
+                      break;
+                  case 'content-lab':
+                      file = 'content-lab';
+                      break;
+                  case 'users-table':
+                      file = 'users-table';
+                      break;
+
+              }
+              const resolvedPageUrl = this.resolveUrl(file +  '.html');
+              Polymer.importHref(
+                  resolvedPageUrl,
+                  null,
+                  this._showPage404.bind(this),
+                  true);
+          }
+
+          _showPage404() {
+              this.page = 'view404';
+          }
+
+          handleOptionClick(event) {
+              const item = event.model.item;
+              if(item.hasOwnProperty('isContent') && item.isContent === 'true' ) {
+                  this.dispatch('changeStep', item.name);
+              }
+          }
+
+          signOut(){
+              firebase.auth().signOut()
+                  .then(() => {
+                      this.set('isAdmin', false);
+                      this.set('isLoged', false);
+                      this.__changeRoute('lavs');
+                      this.__showUsersTable();
+                      this.set('labUid', '');
+                      this.dispatch('changeUserLabInfo', {});
+                  })
+                  .catch( error => {
+                      this.dispatchEvent(new CustomEvent('notification', {
+                          bubbles: true,
+                          composed: true,
+                          detail: {
+                              error: error.message
+                          }
+                      }))
+                  });
+          }
+
+          __changeToLogin(event){
+              const detail = event.detail;
+              this.__changeRoute(detail.page);
+          }
+
+          __changeRoute(page) {
+              window.history.pushState({}, null, page);
+              window.dispatchEvent(new CustomEvent('location-changed'));
+          }
+
       }
 
-      static get observers() {
-        return [
-          '_routePageChanged(routeData.page)',
-        ];
-      }
-
-        show(event){
-            const toaster = this.shadowRoot.querySelector('#toast');
-            toaster.text = event.detail.error;
-            toaster.open();
-        }
-
-        connectedCallback() {
-            super.connectedCallback();
-            this.__oAuthMiddelware();
-        }
-
-        __oAuthMiddelware() {
-            firebase.auth().onAuthStateChanged(user => {
-                console.log('user:' + user);
-            });
-        }
-
-
-        _routePageChanged(page) {
-        // If no page was found in the route data, page will be an empty string.
-        // Default to 'view1' in that case.
-        this.page = page || 'lavs';
-
-        // Close a non-persistent drawer when the page & route are changed.
-        if (!this.$.drawer.persistent) {
-          this.$.drawer.close();
-        }
-      }
-
-      _pageChanged(page) {
-        // Load page import on demand. Show 404 page if fails
-        console.log(page);
-        let file = 'my-view404';
-        switch (page){
-            case 'lavs':
-                file = 'lavs-view';
-                break;
-            case 'login':
-                file = 'login-view';
-                break;
-        }
-        const resolvedPageUrl = this.resolveUrl(file +  '.html');
-        Polymer.importHref(
-            resolvedPageUrl,
-            null,
-            this._showPage404.bind(this),
-            true);
-      }
-
-      _showPage404() {
-        this.page = 'view404';
-      }
-    }
-
-    window.customElements.define(KodeLavsApp.is, KodeLavsApp);
+      window.customElements.define(KodeLavsApp.is, KodeLavsApp);
   </script>
 </dom-module>

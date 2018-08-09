@@ -1,0 +1,113 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="shared-styles.html">
+<link rel="import" href="../bower_components/paper-datatable-api/paper-datatable-api-column.html">
+<link rel="import" href="../bower_components/paper-datatable-api/paper-datatable-api.html">
+<link rel="import" href="../bower_components/iron-image/iron-image.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+
+<dom-module id="users-table">
+    <template>
+        <style include="shared-styles">
+            :host {
+                display: block;
+
+                padding: 10px;
+            }
+        </style>
+        <div class="card">
+        <paper-datatable-api
+                             data="[[users]]"
+                             id="table">
+            <paper-datatable-api-column  header="Name" property="displayName">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="E-mail" property="email">
+                <template>
+                    <span>[[value]]</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Rol" property="rol">
+                <template>
+                    <span>[[value]]</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Potho" property="photoURL">
+                <template>
+                    <iron-image style="width:100px; height:100px;" src="[[value]]"></iron-image>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="eliminar" property="privateInfo">
+                <template>
+                    <paper-button id="[[value.uid]]" on-click="__deleteUser">Eliminar</paper-button>
+                </template>
+            </paper-datatable-api-column>
+        </paper-datatable-api>
+        </div>
+    </template>
+
+    <script>
+
+        class UsersTable extends Polymer.Element {
+            static get is() { return 'users-table'; }
+            static get properties() {
+                return {
+                    rol: {
+                        type: String,
+                    },
+                    users: {
+                        type: Array,
+                        value: [],
+                    },
+                };
+            }
+
+            connectedCallback(){
+                super.connectedCallback();
+                this.__getUsers();
+            }
+
+            __getUsers() {
+                firebase.auth().onAuthStateChanged( user => {
+                    if(user !== null) {
+                        const fireBaseUsers = firebase.database().ref('Users/');
+                        fireBaseUsers.on('value', (users) => {
+                            const usersArray = new Array();
+                            users.forEach(user => {
+                                const jsonUser = user.val();
+                                jsonUser.privateInfo = {};
+                                jsonUser.privateInfo.uid = user.key;
+                                jsonUser.privateInfo.rol = jsonUser.rol;
+                                usersArray.push(jsonUser);
+                            });
+                            this.set('users', usersArray);
+                            console.log(this.get('users'));
+                        });
+                    } else {
+                        this.dispatchEvent(new CustomEvent('to-login', {
+                            bubbles: true,
+                            composed: true,
+                            detail: {
+                                page: 'login',
+                            },
+                        }));
+                    }
+                });
+            }
+
+            __deleteUser(event) {
+                const uid = event.currentTarget.id;
+                firebase.database().ref('Users/' + uid).remove();
+            }
+
+            __isNotAdmin(rol) {
+                return rol.toLowerCase().equal('admin');
+            }
+
+        }
+
+        window.customElements.define(UsersTable.is, UsersTable);
+    </script>
+</dom-module>
+

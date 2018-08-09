@@ -114,17 +114,26 @@
 
             _validateSession(){
                 firebase.auth().onAuthStateChanged( user => {
-                    this.response.useruid = user.uid;
-                    this.response.labuid = this.lab.uid;
+                    if(user !== null) {
+                        this.response.useruid = user.uid;
+                        this.response.labuid = this.lab.uid;
 
-                    if(user){
-                        this._createMasterEvent(event, this.response);
+                        if(user){
+                            this._createMasterEvent(event, this.response);
+                        }
+                        else{
+                            this.response.verificator = true;
+                            this._createMasterEvent(event,this.response);
+                        }
+                    } else {
+                        this.dispatchEvent(new CustomEvent('to-login', {
+                            bubbles: true,
+                            composed: true,
+                            detail: {
+                                page: 'login',
+                            }
+                        }));
                     }
-                    else{
-                        this.response.verificator = true;
-                        this._createMasterEvent(event,this.response);
-                    }
-
                 });
 
             }
