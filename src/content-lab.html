@@ -1,0 +1,164 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="shared-styles.html">
+<link rel="import" href="../bower_components/marked-element/marked-element.html">
+<link rel="import" href="redux/redux-mixin.html">
+
+<dom-module id="content-lab">
+    <template>
+        <style include="shared-styles">
+            :host {
+                display: block;
+
+                padding: 10px;
+            }
+        </style>
+
+        <div class="card">
+        <marked-element markdown="[[content]]">
+            <div slot="markdown-html"></div>
+        </marked-element>
+        </div>
+    </template>
+
+    <script>
+        class ContentLab extends ReduxMixin(Polymer.Element) {
+            static get is() { return 'content-lab'; }
+
+            static get properties() {
+                return {
+                    steps: {
+                        type: Array,
+                        value: [],
+                    },
+                    step: {
+                        type: String,
+                        value: '1',
+                        observer: 'changeContent',
+                        statePath: 'step',
+                    },
+                    options: {
+                        type: Array,
+                        statePath: 'options',
+                    },
+                    content: {
+                        type: String,
+                        value: '',
+                    },
+                    userLabInfo: {
+                        type: Object,
+                        observer: '__getLab',
+                        statePath: 'userLabInfo',
+                    },
+                };
+            }
+
+            static get actions() {
+                return {
+                    changeOptions: (options) => {
+                        return {
+                            type: 'CHANGE_OPTIONS',
+                            options: options,
+                        };
+                    },
+                    changeTitle: (title) => {
+                        return {
+                            type: 'CHANGE_TITLE',
+                            title: title,
+                        };
+                    },
+                };
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+                this.__getLab();
+            }
+
+            __getLab() {
+                firebase.auth().onAuthStateChanged( user => {
+                    if(user !== null) {
+                        const userLabInfo = this.get('userLabInfo');
+                        if(userLabInfo.step) {
+                            const fireBaseLab =
+                                firebase.database().ref('lab/' + userLabInfo.labUid);
+                            fireBaseLab.on('value', (snapshot) => {
+                                const lab = snapshot.val();
+                                const content = lab.content;
+                                const stepArray = [];
+                                for (var key in content) {
+                                    if (content.hasOwnProperty(key)) {
+                                        const step = content[key];
+                                        step.uid = key;
+                                        stepArray.push(step);
+                                    }
+                                }
+                                stepArray.sort((a, b) => {
+                                    return a.step - b.step;
+                                });
+                                this.set('steps', stepArray);
+                                let stepUser = parseInt(userLabInfo.step);
+                                this.set('content', stepArray[stepUser - 1].content);
+                                this.__buildOptions(stepUser);
+                                this.dispatch('changeTitle', lab.title);
+                            });
+                        } else {
+                            this.__redirect ('lavs');
+                        }
+                    } else {
+                        this.__redirect ('login');
+                    }
+                });
+            }
+
+            __redirect (page) {
+                this.dispatchEvent(new CustomEvent('to-login', {
+                    bubbles: true,
+                    composed: true,
+                    detail: {
+                        page: page,
+                    },
+                }));
+            }
+            __buildOptions(stepUser) {
+                const steps = this.get('steps');
+                const options = [];
+                for(const step of steps) {
+                    const option = {};
+                    option.option = step.title;
+                    option.name = step.step;
+                    option.path = 'content-lab/' + step.title;
+                    option.isContent = 'true';
+                    if(parseInt(step.step) === stepUser) {
+                        option.class = 'iron-selected';
+                    }
+                    options.push(option);
+                }
+                this.dispatch('changeOptions', options);
+            }
+
+            changeContent() {
+                const steps = this.get('steps');
+                if(steps.length > 0) {
+                    const contentStep = this.get('step');
+                    for(const step of steps) {
+                        if(step.step === contentStep) {
+                            this.set('content', step.content);
+                            break;
+                        }
+                    }
+                    this.__updateStep(contentStep);
+                }
+            }
+
+            __updateStep(step) {
+                const userLabInfo = this.get('userLabInfo');
+                const ref =
+                    'userLabs/' + userLabInfo.uidUser + '/' + userLabInfo.labUid;
+                firebase.database().ref(ref).set({step: step});
+            }
+
+        }
+
+        window.customElements.define(ContentLab.is, ContentLab);
+    </script>
+</dom-module>

@@ -1,0 +1,45 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer-redux/polymer-redux.html">
+<script src="../../node_modules/redux/dist/redux.js"></script>
+
+<script>
+    const initialState = {
+        options: [
+        ],
+        title: 'Labs',
+        step: '1',
+        userLabInfo: {
+        }
+    };
+
+    const reducer = (state, action) => {
+        if (!state) {
+            return initialState;
+        }
+        let options = [];
+        switch (action.type) {
+            case 'CHANGE_OPTIONS':
+                options = action.options;
+                if(options === null) {
+                    return Object.assign({}, initialState);
+                }
+                return Object.assign({}, state, {options: options});
+                break;
+            case 'CHANGE_STEP':
+                state.step = action.step;
+                return Object.assign({}, state);
+                break;
+            case 'CHANGE_TITLE':
+                state.title = action.title;
+                return Object.assign({}, state);
+                break;
+            case 'CHANGE_USER_LAB_INFO':
+                state.userLabInfo = action.userLabInfo;
+                return Object.assign({}, state);
+                break;
+        }
+    };
+    // Create a Redux store
+    const store = Redux.createStore(reducer);
+    const ReduxMixin = PolymerRedux(store);
+</script>
