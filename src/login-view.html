@@ -1,0 +1,95 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="shared-styles.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+
+
+<dom-module id="login-view">
+    <template>
+        <style include="shared-styles">
+            :host {
+                display: block;
+                padding: 10px;
+            }
+        </style>
+
+        <div class="card">
+            <div class="circle">!</div>
+            <h1>¡Bienvenido!</h1>
+            <style>
+                paper-input {
+                    max-width: 400px;
+                    margin: auto;
+                }
+                iron-icon, div[suffix] {
+                    color: hsl(0, 0%, 50%);
+                    margin-right: 12px;
+                }
+            </style>
+
+            <paper-input label="username" id="username">
+                <iron-icon icon="mail" slot="prefix"></iron-icon>
+
+            </paper-input>
+            <paper-input always-float-label label="password" id="password" type="password"></paper-input>
+            <paper-button type="button" on-click="startSession">Iniciar Sesión</paper-button>
+        </div>
+
+    </template>
+
+    <script>
+        class LoginView extends Polymer.Element {
+            static get is() { return 'login-view'; }
+
+           /* connectedCallback(){
+                super.connectedCallback();
+                const email = 'test@itzelcom.com'; const password = '123456';
+                firebase.auth().signInWithEmailAndPassword(email, password).catch((error) => {
+                    console.log(error);
+                });
+            }
+            */
+
+           /*static get properties(){
+               return{
+                   notificationMessage : {
+                       type: String,
+                       value: ''
+                   }
+               }
+           }
+           */
+
+            startSession(){
+                const username = this.$.username.value;
+                const password = this.$.password.value;
+
+
+                firebase
+                    .auth()
+                    .signInWithEmailAndPassword(username, password)
+                    .catch(error => {
+                        this.dispatchEvent(new CustomEvent('notification',{
+                            bubbles: true,
+                            composed: true,
+                            detail: {
+                                error: error.message
+                            }
+                        }))
+
+                    });
+
+                this.$.username.value = '';
+                this.$.password.value = '';
+            }
+
+
+
+        }
+
+        window.customElements.define(LoginView.is, LoginView);
+    </script>
+</dom-module>

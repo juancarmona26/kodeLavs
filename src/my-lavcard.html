@@ -1,0 +1,150 @@
+<script src="../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="shared-styles.html">
+
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-styles/color.html">
+<link rel="import" href="../bower_components/paper-styles/typography.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/iron-collapse/iron-collapse.html">
+
+
+
+<dom-module id="my-lavcard">
+    <template>
+        <custom-style>
+            <style is="custom-style">
+
+                body {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                paper-card {
+                    max-width: 350px;
+                    margin-top: 5%;
+                }
+                .cafe-header { @apply --paper-font-headline; }
+                .cafe-light { color: var(--paper-grey-600); }
+                .cafe-location {
+                    float: right;
+                    font-size: 15px;
+                    vertical-align: middle;
+                }
+                .cafe-reserve { color: var(--google-blue-500); }
+                iron-icon.star {
+                    --iron-icon-width: 16px;
+                    --iron-icon-height: 16px;
+                    color: var(--paper-amber-500);
+                }
+                iron-icon.star:last-of-type { color: var(--paper-grey-500); }
+
+                paper-button.indigo {
+                    color: var(--paper-indigo-400);
+                    border: #4a148c 1px solid;
+
+                }
+
+
+            </style>
+            <custom-style>
+
+                <paper-card id="pcard" heading="[[lab.title]]" image="../images/purple.png" alt="Sailboat Harbor" class="white">
+                    <div class="card-content">[[lab.category]]</div>
+                    <div class="card-actions">
+
+                        <paper-icon-button icon="expand-more" title="more info" on-click="toggle" style="float:right;">
+                        </paper-icon-button>
+                        <iron-collapse id="labDescription-info" style="width:100%;">
+                            [[lab.description]]
+                        </iron-collapse>
+
+                        <paper-button id="validateButton" class="indigo" on-click="_validateSession">Inicia curso</paper-button>
+                    </div>
+                </paper-card>
+
+            </custom-style></custom-style>
+
+    </template>
+
+    <script>
+        class MyLavcard extends Polymer.Element {
+            static get is() {
+                return 'my-lavcard';
+            }
+
+
+            static get properties() {
+                return {
+                    user:{
+                        type: Object,
+                        value: {}
+                    },
+                    lab:{
+                        type: Object,
+                        value: {}
+                    },
+                    page:{
+                        type: String
+                    }
+
+
+                };
+            }
+
+            constructor(){
+                super();
+                this.lab = {
+                    uid:'',
+                    title:'Example of Title',
+                    category: 'Example of Category',
+                    description: 'Brief description of this lab, Lorem ipsum dolor sit amet, per in nusquam nomin Lorem ipsum dolor sit amet, per in nusquam nomin'
+                };
+                this.response = {
+                    response:{
+                        useruid : '',
+                        labuid : this.lab.uid,
+                        verificator : false
+                    }
+                };
+            }
+
+            _validateSession(){
+                firebase.auth().onAuthStateChanged( user => {
+                    this.response.useruid = user.uid;
+                    this.response.labuid = this.lab.uid;
+
+                    if(user){
+                        this._createMasterEvent(event, this.response);
+                    }
+                    else{
+                        this.response.verificator = true;
+                        this._createMasterEvent(event,this.response);
+                    }
+
+                });
+
+            }
+
+            _createMasterEvent(event,data){
+                this.dispatchEvent(new CustomEvent('verify', {
+                    bubbles: true,
+                    composed: true,
+                    detail: data
+                }));
+            }
+
+            toggle() {
+                const descriptionDiv = this.shadowRoot.querySelector('#labDescription-info');
+                const button = this.shadowRoot.querySelector('#validateButton');
+                descriptionDiv.toggle();
+                button.setAttribute('aria-expanded', descriptionDiv.opened);
+            }
+
+        }
+        window.customElements.define(MyLavcard.is, MyLavcard);
+    </script>
+</dom-module>
